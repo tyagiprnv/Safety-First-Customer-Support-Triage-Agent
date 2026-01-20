@@ -1,0 +1,70 @@
+{
+  "category": "features",
+  "faqs": [
+    {
+      "id": "feature_001",
+      "question": "How do I add new users to my account?",
+      "answer": "To add users: 1) Go to Settings > Team Management, 2) Click 'Invite User', 3) Enter their email address and select their role (Admin, Member, or Viewer), 4) Click Send Invitation. They'll receive an email to create their account. Note: User limits depend on your subscription plan.",
+      "keywords": ["add users", "invite team", "team management"]
+    },
+    {
+      "id": "feature_002",
+      "question": "How does file sharing work?",
+      "answer": "You can share files by clicking the Share button next to any file or folder. You can: 1) Share with specific team members, 2) Generate a public link with optional password protection, or 3) Set view-only or edit permissions. Shared links can be revoked anytime.",
+      "keywords": ["file sharing", "share files", "collaboration"]
+    },
+    {
+      "id": "feature_003",
+      "question": "Can I integrate with other tools?",
+      "answer": "Yes! We offer integrations with popular tools like Slack, Google Workspace, Microsoft 365, Zapier, and more. Integrations are available on Professional and Enterprise plans. To set up integrations, go to Settings > Integrations and follow the connection instructions for each tool.",
+      "keywords": ["integrations", "connect apps", "third-party"]
+    },
+    {
+      "id": "feature_004",
+      "question": "How do I export my data?",
+      "answer": "To export your data: 1) Go to Settings > Data Export, 2) Select the data types you want to export (files, databases, user data, etc.), 3) Choose format (CSV, JSON, or ZIP), 4) Click 'Request Export'. You'll receive an email with a download link when your export is ready (usually within 24 hours).",
+      "keywords": ["export data", "download data", "data backup"]
+    },
+    {
+      "id": "feature_005",
+      "question": "What's the difference between plan tiers?",
+      "answer": "Basic ($29/mo): 5 users, 10GB storage, email support, core features. Professional ($79/mo): 25 users, 100GB storage, priority support, advanced features + API access. Enterprise (custom): unlimited users, 1TB+ storage, phone support, all features + dedicated account manager.",
+      "keywords": ["plans", "pricing", "features comparison"]
+    },
+    {
+      "id": "feature_006",
+      "question": "How do I use the API?",
+      "answer": "API access is available on Professional and Enterprise plans. To get started: 1) Go to Settings > API Keys, 2) Generate a new API key, 3) Review our API documentation at docs.yoursaas.com/api, 4) Use the key in your requests. Keep your API key secure - it provides full access to your account data.",
+      "keywords": ["api", "api key", "api access"]
+    },
+    {
+      "id": "feature_007",
+      "question": "Can I customize my workspace?",
+      "answer": "Yes! You can customize: 1) Your dashboard layout (drag and drop widgets), 2) Theme colors and branding (Enterprise only), 3) Notification preferences, 4) Default views and filters, and 5) Keyboard shortcuts. Access customization options in Settings > Preferences.",
+      "keywords": ["customize", "personalize", "branding"]
+    },
+    {
+      "id": "feature_008",
+      "question": "How does version history work?",
+      "answer": "We automatically save version history for all files. You can: 1) View previous versions by clicking the clock icon on any file, 2) See who made each change and when, 3) Restore any previous version, and 4) Compare versions side-by-side. History is retained for 90 days on Basic, 1 year on Professional, and unlimited on Enterprise.",
+      "keywords": ["version history", "previous versions", "restore"]
+    },
+    {
+      "id": "feature_009",
+      "question": "Can I automate workflows?",
+      "answer": "Yes! Professional and Enterprise plans include workflow automation. You can create automated workflows for tasks like: sending notifications, moving files, updating records, and triggering actions based on conditions. Access automation in Settings > Workflows or use our Zapier integration for external automations.",
+      "keywords": ["automation", "workflows", "automatic"]
+    },
+    {
+      "id": "feature_010",
+      "question": "How do permissions work?",
+      "answer": "We have three permission levels: 1) Admin - full access including billing and user management, 2) Member - can create, edit, and share content, 3) Viewer - read-only access. Permissions can be set at account level (for all content) or per-item (for specific files/folders). Admins can change permissions anytime.",
+      "keywords": ["permissions", "roles", "access control"]
+    }
+  ],
+  "metadata": {
+    "total_faqs": 10,
+    "last_updated": "2024-01-15",
+    "version": "1.0"
+  }
+}

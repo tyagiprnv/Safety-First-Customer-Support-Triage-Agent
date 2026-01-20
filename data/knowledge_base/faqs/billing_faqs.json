@@ -1,0 +1,70 @@
+{
+  "category": "billing",
+  "faqs": [
+    {
+      "id": "billing_001",
+      "question": "When will I be charged for my subscription?",
+      "answer": "You will be charged on the same day each month (or year for annual plans), based on the date you started your subscription. For example, if you subscribed on the 15th, you'll be billed on the 15th of each month. You'll receive an invoice email 3 days before each charge.",
+      "keywords": ["billing date", "when charged", "billing cycle"]
+    },
+    {
+      "id": "billing_002",
+      "question": "What payment methods do you accept?",
+      "answer": "We accept major credit cards (Visa, MasterCard, American Express, Discover), debit cards with credit processing, ACH bank transfers for annual plans, and PayPal for monthly plans. All payments are processed securely through our PCI-compliant payment processor.",
+      "keywords": ["payment methods", "credit card", "paypal", "bank transfer"]
+    },
+    {
+      "id": "billing_003",
+      "question": "How do I update my payment method?",
+      "answer": "To update your payment method: 1) Log into your account dashboard, 2) Navigate to Settings > Billing, 3) Click 'Update Payment Method', 4) Enter your new payment details, and 5) Save changes. The new method will be used for your next billing cycle.",
+      "keywords": ["update payment", "change card", "payment method"]
+    },
+    {
+      "id": "billing_004",
+      "question": "Where can I find my invoices?",
+      "answer": "All your invoices are available in your account dashboard under 'Billing History'. You can view and download them as PDF files. Receipts are also automatically emailed to you after each successful payment.",
+      "keywords": ["invoices", "receipts", "billing history"]
+    },
+    {
+      "id": "billing_005",
+      "question": "What happens if my payment fails?",
+      "answer": "If a payment fails, you'll receive an immediate email notification. We'll automatically retry the payment after 3 days, and again after 7 days. If all retries fail, your account will be suspended after 15 days. You can manually retry the payment anytime in your dashboard.",
+      "keywords": ["payment failed", "declined card", "payment retry"]
+    },
+    {
+      "id": "billing_006",
+      "question": "Why was I charged twice?",
+      "answer": "Duplicate charges can occur due to processing delays that make a charge appear pending (leading to a retry), subscription renewal coinciding with a plan change, or having multiple active subscriptions. If you see duplicate charges, please contact support immediately for resolution.",
+      "keywords": ["double charge", "duplicate charge", "charged twice"]
+    },
+    {
+      "id": "billing_007",
+      "question": "When will the charge appear on my credit card statement?",
+      "answer": "Credit card charges typically appear within 1-3 business days. The charge will show as 'YourSaaSCompany' or our payment processor's name. Pending charges may take up to 5 business days to fully process.",
+      "keywords": ["statement", "when charged", "card statement"]
+    },
+    {
+      "id": "billing_008",
+      "question": "Do you charge sales tax?",
+      "answer": "Yes, sales tax is calculated based on your billing address. Tax rates vary by location and are applied automatically. Tax-exempt organizations must provide valid documentation. All tax information is included on your invoices.",
+      "keywords": ["tax", "sales tax", "vat"]
+    },
+    {
+      "id": "billing_009",
+      "question": "Can I dispute a charge?",
+      "answer": "If you notice a billing error, first review your billing history in your account dashboard and compare it with your current subscription plan. If you believe there's an error, contact our support team. Disputes must be raised within 60 days of the charge.",
+      "keywords": ["dispute", "billing error", "wrong charge"]
+    },
+    {
+      "id": "billing_010",
+      "question": "Do you accept international payments?",
+      "answer": "Yes, we accept international credit and debit cards. All prices are in USD unless otherwise specified. Your card issuer will handle currency conversion automatically. Currency conversion fees may apply based on your bank's policies.",
+      "keywords": ["international", "currency", "foreign card"]
+    }
+  ],
+  "metadata": {
+    "total_faqs": 10,
+    "last_updated": "2024-01-15",
+    "version": "1.0"
+  }
+}

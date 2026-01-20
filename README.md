@@ -36,47 +36,6 @@ This project implements an AI-powered customer support triage system that **prio
 
 ![Architecture](images/architecture.png)
 
-
-```
-User Message
-   ↓
-[1] Input Validation (10-2000 chars)
-   ↓
-[2] PII Detection & Redaction (DETERMINISTIC)
-   └─ Regex: email, phone, SSN, credit card, account IDs
-   └─ Output: redacted_message + pii_metadata
-   └─ Semantic markers preserve context: [EMAIL_ADDRESS], [PHONE_NUMBER], etc.
-   ↓
-[3] High-Risk PII Check
-   └─ If SSN or credit card detected → AUTO-ESCALATE (skip classification)
-   ↓
-[4] Intent Classification (on redacted message)
-   └─ LLM classifies intent with PII context awareness
-   └─ Confidence adjustment: reduce by 20% if PII removed critical context
-   ↓
-[5] Risk Scoring
-   └─ Factors: intent type, confidence, PII presence
-   └─ Output: risk_score (0.0-1.0)
-   ↓
-[6] Hard Rule Check
-   └─ If intent in FORBIDDEN_INTENTS → ESCALATE
-   ↓
-[7] Decision Router (Explicit Precedence)
-   └─ 1. Safety checks (risk, confidence, PII)
-   └─ 2. Template matching (preferred, safest)
-   └─ 3. RAG retrieval + generation (flexible but slower)
-   └─ 4. Default: ESCALATE
-   ↓
-[8] Response Generation (if TEMPLATE or GENERATED)
-   └─ TEMPLATE: Use pre-written response
-   └─ GENERATED: Retrieve from vector DB → LLM generates with context
-   ↓
-[9] Output Validation
-   └─ No PII leakage, no policy violations, length check
-   ↓
-[10] Logging (all logs are PII-free by design)
-```
-
 ---
 
 ## Supported vs. Forbidden Intents

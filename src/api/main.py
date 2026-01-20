@@ -1,0 +1,473 @@
+"""Main FastAPI application."""
+import time
+import uuid
+from datetime import datetime
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse
+from typing import Dict, Any
+import structlog
+
+from src.models import (
+    ChatRequest, ChatResponse, MetricsResponse, HealthResponse,
+    Action
+)
+from src.config import get_settings
+from src.logging_config import configure_logging, get_logger
+from src.pii_redactor import get_pii_redactor
+from src.intent_classifier import get_intent_classifier
+from src.risk_scorer import get_risk_scorer
+from src.decision_router import get_decision_router
+from src.retrieval import get_retrieval_pipeline
+from src.generation import get_response_generator
+from src.output_validator import get_output_validator
+from src.escalation import get_escalation_system
+from src.vector_store import get_vector_store
+
+# Configure logging
+configure_logging()
+logger = get_logger(__name__)
+
+# Create FastAPI app
+app = FastAPI(
+    title="Safety-First Customer Support Triage Agent",
+    description="Privacy-first customer support automation with PII redaction",
+    version="1.0.0"
+)
+
+# Global metrics storage (in-memory for demo)
+metrics_store: Dict[str, Any] = {
+    "total_requests": 0,
+    "action_counts": {
+        "TEMPLATE": 0,
+        "GENERATED": 0,
+        "ESCALATE": 0
+    },
+    "latencies": {
+        "template": [],
+        "generated": [],
+        "escalate": []
+    },
+    "safety_metrics": {
+        "unsafe_responses": 0,
+        "high_risk_pii_escalations": 0,
+        "forbidden_intent_escalations": 0
+    }
+}
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize components on startup."""
+    logger.info("application_starting")
+
+    # Initialize all components
+    get_pii_redactor()
+    get_intent_classifier()
+    get_risk_scorer()
+    get_decision_router()
+    get_retrieval_pipeline()
+    get_response_generator()
+    get_output_validator()
+    get_escalation_system()
+
+    # Check vector store connection
+    try:
+        vector_store = get_vector_store()
+        doc_count = vector_store.count()
+        logger.info("vector_store_initialized", document_count=doc_count)
+    except Exception as e:
+        logger.error("vector_store_initialization_failed", error=str(e))
+
+    logger.info("application_started")
+
+
+@app.post("/chat", response_model=ChatResponse)
+async def chat(request: ChatRequest) -> ChatResponse:
+    """
+    Process a customer support message.
+
+    Args:
+        request: Chat request with user message
+
+    Returns:
+        Chat response with action and response or escalation
+    """
+    start_time = time.time()
+    request_id = str(uuid.uuid4())
+
+    # Bind request context to logger
+    log = logger.bind(
+        request_id=request_id,
+        session_id=request.session_id
+    )
+
+    log.info("request_received", message_length=len(request.message))
+
+    try:
+        # 1. Input validation
+        if len(request.message) < 10:
+            raise HTTPException(status_code=400, detail="Message too short (minimum 10 characters)")
+
+        if len(request.message) > 2000:
+            raise HTTPException(status_code=400, detail="Message too long (maximum 2000 characters)")
+
+        # 2. PII redaction
+        pii_redactor = get_pii_redactor()
+        redaction = pii_redactor.redact(request.message)
+
+        log.info(
+            "pii_redaction_complete",
+            has_pii=redaction.has_pii,
+            has_high_risk_pii=redaction.has_high_risk_pii,
+            pii_types=redaction.pii_types,
+            redaction_count=redaction.redaction_count
+        )
+
+        # 3. High-risk PII check (immediate escalation)
+        if redaction.has_high_risk_pii:
+            escalation_system = get_escalation_system()
+            ticket_id = escalation_system.create_ticket(
+                redaction=redaction,
+                reason="high_risk_pii_detected",
+                metadata={"request_id": request_id}
+            )
+
+            metrics_store["total_requests"] += 1
+            metrics_store["action_counts"]["ESCALATE"] += 1
+            metrics_store["safety_metrics"]["high_risk_pii_escalations"] += 1
+
+            latency_ms = (time.time() - start_time) * 1000
+            metrics_store["latencies"]["escalate"].append(latency_ms)
+
+            log.info(
+                "request_processed",
+                action="ESCALATE",
+                reason="high_risk_pii_detected",
+                ticket_id=ticket_id,
+                latency_ms=latency_ms
+            )
+
+            return ChatResponse(
+                action=Action.ESCALATE,
+                response=None,
+                reason="high_risk_pii_detected",
+                escalation_ticket_id=ticket_id,
+                metadata={
+                    "pii_detected": redaction.pii_types,
+                    "latency_ms": latency_ms
+                }
+            )
+
+        # 4. Intent classification
+        classifier = get_intent_classifier()
+        classification = classifier.classify(redaction)
+
+        log.info(
+            "intent_classified",
+            intent=classification.intent.value,
+            confidence=classification.confidence,
+            adjusted_confidence=classification.adjusted_confidence,
+            is_forbidden=classification.is_forbidden
+        )
+
+        # 5. Risk scoring
+        risk_scorer = get_risk_scorer()
+        risk_score = risk_scorer.calculate_risk(classification, redaction)
+
+        log.info("risk_score_calculated", risk_score=risk_score)
+
+        # 6. Decision routing
+        router = get_decision_router()
+        decision = router.route(
+            classification=classification,
+            redaction=redaction,
+            risk_score=risk_score,
+            retrieval_score=None  # Will be set if needed
+        )
+
+        log.info(
+            "routing_decision_made",
+            action=decision.action.value,
+            reason=decision.reason
+        )
+
+        # 7. Execute action
+        if decision.action == Action.ESCALATE:
+            # Create escalation ticket
+            escalation_system = get_escalation_system()
+            ticket_id = escalation_system.create_ticket(
+                redaction=redaction,
+                reason=decision.reason,
+                metadata={
+                    "request_id": request_id,
+                    "intent": classification.intent.value,
+                    "confidence": classification.confidence,
+                    "risk_score": risk_score
+                }
+            )
+
+            # Update metrics
+            metrics_store["total_requests"] += 1
+            metrics_store["action_counts"]["ESCALATE"] += 1
+
+            if classification.is_forbidden:
+                metrics_store["safety_metrics"]["forbidden_intent_escalations"] += 1
+
+            latency_ms = (time.time() - start_time) * 1000
+            metrics_store["latencies"]["escalate"].append(latency_ms)
+
+            log.info(
+                "request_processed",
+                action="ESCALATE",
+                reason=decision.reason,
+                ticket_id=ticket_id,
+                latency_ms=latency_ms
+            )
+
+            return ChatResponse(
+                action=Action.ESCALATE,
+                response=None,
+                reason=decision.reason,
+                escalation_ticket_id=ticket_id,
+                metadata={
+                    "intent": classification.intent.value,
+                    "confidence": classification.confidence,
+                    "risk_score": risk_score,
+                    "latency_ms": latency_ms
+                }
+            )
+
+        elif decision.action == Action.TEMPLATE:
+            # Use template response
+            from src.decision_router import TemplateStore
+            template_store = router.template_store
+            template = next(
+                (t for t in template_store.templates if t.id == decision.template_id),
+                None
+            )
+
+            if not template:
+                raise HTTPException(status_code=500, detail="Template not found")
+
+            response_text = template.template
+
+            # Update metrics
+            metrics_store["total_requests"] += 1
+            metrics_store["action_counts"]["TEMPLATE"] += 1
+
+            latency_ms = (time.time() - start_time) * 1000
+            metrics_store["latencies"]["template"].append(latency_ms)
+
+            log.info(
+                "request_processed",
+                action="TEMPLATE",
+                template_id=decision.template_id,
+                latency_ms=latency_ms
+            )
+
+            return ChatResponse(
+                action=Action.TEMPLATE,
+                response=response_text,
+                reason=decision.reason,
+                metadata={
+                    "intent": classification.intent.value,
+                    "confidence": classification.confidence,
+                    "risk_score": risk_score,
+                    "template_id": decision.template_id,
+                    "latency_ms": latency_ms
+                }
+            )
+
+        elif decision.action == Action.GENERATED:
+            # Generate response with RAG
+            retrieval_pipeline = get_retrieval_pipeline()
+            retrieval_result = retrieval_pipeline.retrieve(
+                query=redaction.redacted_message,
+                intent=classification.intent
+            )
+
+            if not retrieval_result or not retrieval_result.has_good_retrieval:
+                # Fallback to escalation
+                escalation_system = get_escalation_system()
+                ticket_id = escalation_system.create_ticket(
+                    redaction=redaction,
+                    reason="insufficient_retrieval",
+                    metadata={
+                        "request_id": request_id,
+                        "retrieval_score": retrieval_result.average_score if retrieval_result else 0.0
+                    }
+                )
+
+                metrics_store["total_requests"] += 1
+                metrics_store["action_counts"]["ESCALATE"] += 1
+
+                latency_ms = (time.time() - start_time) * 1000
+
+                log.info(
+                    "request_processed",
+                    action="ESCALATE",
+                    reason="insufficient_retrieval",
+                    ticket_id=ticket_id,
+                    latency_ms=latency_ms
+                )
+
+                return ChatResponse(
+                    action=Action.ESCALATE,
+                    response=None,
+                    reason="insufficient_retrieval",
+                    escalation_ticket_id=ticket_id,
+                    metadata={"latency_ms": latency_ms}
+                )
+
+            # Generate response
+            generator = get_response_generator()
+            response_text, sources = generator.generate(
+                query=redaction.redacted_message,
+                retrieval_result=retrieval_result
+            )
+
+            # Validate output
+            validator = get_output_validator()
+            is_valid, validation_reason = validator.validate(response_text)
+
+            if not is_valid:
+                # Output validation failed - escalate
+                escalation_system = get_escalation_system()
+                ticket_id = escalation_system.create_ticket(
+                    redaction=redaction,
+                    reason="output_validation_failed",
+                    metadata={
+                        "request_id": request_id,
+                        "validation_reason": validation_reason
+                    }
+                )
+
+                metrics_store["total_requests"] += 1
+                metrics_store["action_counts"]["ESCALATE"] += 1
+
+                latency_ms = (time.time() - start_time) * 1000
+
+                log.warning(
+                    "output_validation_failed",
+                    reason=validation_reason,
+                    ticket_id=ticket_id
+                )
+
+                log.info(
+                    "request_processed",
+                    action="ESCALATE",
+                    reason="output_validation_failed",
+                    ticket_id=ticket_id,
+                    latency_ms=latency_ms
+                )
+
+                return ChatResponse(
+                    action=Action.ESCALATE,
+                    response=None,
+                    reason="output_validation_failed",
+                    escalation_ticket_id=ticket_id,
+                    metadata={"latency_ms": latency_ms}
+                )
+
+            # Success - return generated response
+            metrics_store["total_requests"] += 1
+            metrics_store["action_counts"]["GENERATED"] += 1
+
+            latency_ms = (time.time() - start_time) * 1000
+            metrics_store["latencies"]["generated"].append(latency_ms)
+
+            log.info(
+                "request_processed",
+                action="GENERATED",
+                retrieval_score=retrieval_result.average_score,
+                latency_ms=latency_ms
+            )
+
+            return ChatResponse(
+                action=Action.GENERATED,
+                response=response_text,
+                reason=decision.reason,
+                metadata={
+                    "intent": classification.intent.value,
+                    "confidence": classification.confidence,
+                    "risk_score": risk_score,
+                    "retrieval_score": retrieval_result.average_score,
+                    "latency_ms": latency_ms
+                }
+            )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        log.error("request_processing_failed", error=str(e), exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+@app.get("/metrics", response_model=MetricsResponse)
+async def get_metrics() -> MetricsResponse:
+    """Get system metrics."""
+    # Calculate average latencies
+    avg_latencies = {}
+    for action_type, latencies in metrics_store["latencies"].items():
+        if latencies:
+            avg_latencies[action_type] = sum(latencies) / len(latencies)
+        else:
+            avg_latencies[action_type] = 0.0
+
+    # Calculate escalation rate
+    total = metrics_store["total_requests"]
+    escalations = metrics_store["action_counts"]["ESCALATE"]
+    escalation_rate = escalations / total if total > 0 else 0.0
+
+    return MetricsResponse(
+        total_requests=total,
+        action_distribution=metrics_store["action_counts"],
+        avg_latency_ms=avg_latencies,
+        escalation_rate=escalation_rate,
+        safety=metrics_store["safety_metrics"]
+    )
+
+
+@app.get("/health", response_model=HealthResponse)
+async def health_check() -> HealthResponse:
+    """Health check endpoint."""
+    # Check vector store
+    vector_db_connected = False
+    try:
+        vector_store = get_vector_store()
+        vector_store.count()
+        vector_db_connected = True
+    except Exception:
+        pass
+
+    # Check LLM provider (simple check)
+    llm_status = "ok"
+    try:
+        settings = get_settings()
+        if not settings.openai_api_key:
+            llm_status = "no_api_key"
+    except Exception:
+        llm_status = "error"
+
+    return HealthResponse(
+        status="healthy" if vector_db_connected else "degraded",
+        vector_db_connected=vector_db_connected,
+        llm_provider_status=llm_status
+    )
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Global exception handler."""
+    logger.error(
+        "unhandled_exception",
+        path=request.url.path,
+        method=request.method,
+        error=str(exc),
+        exc_info=True
+    )
+
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error"}
+    )

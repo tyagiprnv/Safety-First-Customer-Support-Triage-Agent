@@ -88,3 +88,5 @@ evaluation/eval_results/*.csv
 
 # Claude Code
 .claude/
+
+CLAUDE.md

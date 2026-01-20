@@ -1,0 +1,46 @@
+[project]
+name = "safety-first-customer-support-triage-agent"
+version = "0.1.0"
+description = "Privacy-first customer support triage agent with PII redaction and safety guarantees"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
+    "pydantic>=2.5.3",
+    "pydantic-settings>=2.1.0",
+    "openai>=1.10.0",
+    "chromadb>=0.4.22",
+    "structlog>=24.1.0",
+    "python-dotenv>=1.0.0",
+    "httpx>=0.26.0",
+    "tiktoken>=0.5.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.4",
+    "pytest-asyncio>=0.23.3",
+    "pytest-cov>=4.1.0",
+    "black>=24.1.1",
+    "ruff>=0.1.14",
+    "mypy>=1.8.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.black]
+line-length = 100
+target-version = ['py311']
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false

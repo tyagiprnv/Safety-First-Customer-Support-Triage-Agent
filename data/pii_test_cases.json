@@ -1,0 +1,147 @@
+{
+  "test_cases": [
+    {
+      "id": "email_001",
+      "message": "Please contact me at john.doe@example.com for updates",
+      "expected_pii_types": ["email"],
+      "expected_redacted": "Please contact me at [EMAIL_ADDRESS] for updates",
+      "should_detect": true
+    },
+    {
+      "id": "phone_001",
+      "message": "My phone number is 555-123-4567",
+      "expected_pii_types": ["phone"],
+      "expected_redacted": "My phone number is [PHONE_NUMBER]",
+      "should_detect": true
+    },
+    {
+      "id": "phone_002",
+      "message": "Call me at (555) 123-4567",
+      "expected_pii_types": ["phone"],
+      "expected_redacted": "Call me at [PHONE_NUMBER]",
+      "should_detect": true
+    },
+    {
+      "id": "ssn_001",
+      "message": "My SSN is 123-45-6789",
+      "expected_pii_types": ["ssn"],
+      "expected_redacted": "My SSN is [SSN]",
+      "should_detect": true,
+      "is_high_risk": true
+    },
+    {
+      "id": "credit_card_001",
+      "message": "My card number is 4532-1488-0343-6467",
+      "expected_pii_types": ["credit_card"],
+      "expected_redacted": "My card number is [CREDIT_CARD]",
+      "should_detect": true,
+      "is_high_risk": true
+    },
+    {
+      "id": "credit_card_002",
+      "message": "Visa card: 4532148803436467",
+      "expected_pii_types": ["credit_card"],
+      "expected_redacted": "Visa card: [CREDIT_CARD]",
+      "should_detect": true,
+      "is_high_risk": true
+    },
+    {
+      "id": "account_id_001",
+      "message": "My account number is ACC123456",
+      "expected_pii_types": ["account_id"],
+      "expected_redacted": "My [ACCOUNT_ID]",
+      "should_detect": true
+    },
+    {
+      "id": "multiple_pii_001",
+      "message": "Contact john.doe@example.com or call 555-123-4567",
+      "expected_pii_types": ["email", "phone"],
+      "expected_redacted": "Contact [EMAIL_ADDRESS] or call [PHONE_NUMBER]",
+      "should_detect": true
+    },
+    {
+      "id": "high_risk_multiple",
+      "message": "My SSN 123-45-6789 and card 4532-1488-0343-6467 were compromised",
+      "expected_pii_types": ["ssn", "credit_card"],
+      "should_detect": true,
+      "is_high_risk": true
+    },
+    {
+      "id": "false_positive_prevention_001",
+      "message": "I need help with version 3.14.1592 of the software",
+      "expected_pii_types": [],
+      "should_detect": false,
+      "description": "Version numbers should not be detected as phone numbers"
+    },
+    {
+      "id": "false_positive_prevention_002",
+      "message": "The invoice total is $1234567890",
+      "expected_pii_types": [],
+      "should_detect": false,
+      "description": "Large numbers with context should not be SSN"
+    },
+    {
+      "id": "name_001",
+      "message": "I spoke with John Smith about this issue",
+      "expected_pii_types": ["name"],
+      "expected_redacted": "I spoke with [PERSON_NAME] about this issue",
+      "should_detect": true
+    },
+    {
+      "id": "address_001",
+      "message": "Ship to 123 Main Street",
+      "expected_pii_types": ["address"],
+      "expected_redacted": "Ship to [ADDRESS]",
+      "should_detect": true
+    },
+    {
+      "id": "dob_001",
+      "message": "My date of birth is 01/15/1990",
+      "expected_pii_types": ["date_of_birth"],
+      "expected_redacted": "My date of birth is [DATE_OF_BIRTH]",
+      "should_detect": true
+    },
+    {
+      "id": "complex_001",
+      "message": "Hi, I'm John Doe (john.doe@email.com), account #USER789ABC. My card 4532-1488-0343-6467 was charged twice. Please call 555-123-4567.",
+      "expected_pii_types": ["name", "email", "account_id", "credit_card", "phone"],
+      "should_detect": true,
+      "is_high_risk": true,
+      "description": "Complex case with multiple PII types"
+    },
+    {
+      "id": "no_pii_001",
+      "message": "What are your business hours?",
+      "expected_pii_types": [],
+      "should_detect": false
+    },
+    {
+      "id": "no_pii_002",
+      "message": "How do I reset my password?",
+      "expected_pii_types": [],
+      "should_detect": false
+    },
+    {
+      "id": "edge_case_001",
+      "message": "Email me at test@test.co.uk",
+      "expected_pii_types": ["email"],
+      "should_detect": true,
+      "description": "International domain"
+    },
+    {
+      "id": "edge_case_002",
+      "message": "Call 5551234567 (no formatting)",
+      "expected_pii_types": ["phone"],
+      "should_detect": true,
+      "description": "Phone without formatting"
+    }
+  ],
+  "metadata": {
+    "total_cases": 20,
+    "high_risk_cases": 4,
+    "false_positive_tests": 2,
+    "no_pii_cases": 2,
+    "version": "1.0",
+    "description": "Comprehensive PII detection test suite"
+  }
+}

@@ -427,10 +427,3 @@ MIT License - See LICENSE file for details
 
 ---
 
-## Contact
-
-For questions about this project, please open an issue on GitHub.
-
----
-
-**Built with ❤️ to demonstrate production-grade GenAI engineering practices.**

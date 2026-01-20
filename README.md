@@ -34,6 +34,9 @@ This project implements an AI-powered customer support triage system that **prio
 
 ## Architecture Overview
 
+![Architecture](images/architecture.png)
+
+
 ```
 User Message
    ↓

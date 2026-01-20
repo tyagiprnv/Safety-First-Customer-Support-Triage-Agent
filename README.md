@@ -399,32 +399,6 @@ python -m pytest tests/test_pii_redaction.py::test_high_risk_recall -v
 
 ---
 
-## System Insights for Hiring Managers
-
-### What This Project Demonstrates
-
-1. **Engineering Judgment**: Choosing deterministic PII detection over LLM-based (reliability > flexibility)
-2. **Safety-First Design**: Multiple layers of safety checks, explicit decision logic
-3. **Production Thinking**: Structured logging, output validation, health checks
-4. **Clear Communication**: Every decision documented, tradeoffs explicit
-5. **Pragmatic Execution**: No over-engineering (no Kubernetes, no LangGraph complexity)
-
-### Key Insight
-
-**The system's value isn't in answering everything—it's in knowing when NOT to answer.**
-
-Bias toward escalation + zero unsafe responses = trustworthy automation.
-
-### Not a Startup Product
-
-This is a **demonstration project**, not a SaaS product. It shows:
-- How to build safe AI systems
-- How to document design decisions
-- How to evaluate and iterate
-- How to think about real-world constraints
-
----
-
 ## Project Structure
 
 ```
@@ -482,12 +456,6 @@ These are NOT implemented but documented as learning:
 5. **LLM-as-Judge Evaluation**: Automated quality assessment of generated responses
 6. **A/B Testing Framework**: Test different routing strategies
 7. **Fine-Tuned Classification Model**: Custom model for intent detection
-
----
-
-## Contributing
-
-This is a demonstration project, not accepting contributions. However, feel free to fork and adapt for your own use cases.
 
 ---
 

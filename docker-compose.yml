@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  triage-agent:
+    build: .
+    container_name: safety-first-triage-agent
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - MIN_CONFIDENCE_THRESHOLD=${MIN_CONFIDENCE_THRESHOLD:-0.7}
+      - HIGH_CONFIDENCE_THRESHOLD=${HIGH_CONFIDENCE_THRESHOLD:-0.85}
+      - HIGH_RISK_THRESHOLD=${HIGH_RISK_THRESHOLD:-0.7}
+      - TEMPLATE_SIMILARITY_THRESHOLD=${TEMPLATE_SIMILARITY_THRESHOLD:-0.9}
+      - MIN_RETRIEVAL_SCORE=${MIN_RETRIEVAL_SCORE:-0.75}
+      - VECTOR_DB_PATH=/app/data/vector_db
+    volumes:
+      - vector-db-data:/app/data/vector_db
+      - ./data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  vector-db-data:
+    driver: local

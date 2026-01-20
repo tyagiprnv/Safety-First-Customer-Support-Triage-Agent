@@ -4,7 +4,7 @@
 
 ## Executive Summary
 
-This project implements an AI-powered customer support triage system that **prioritizes safety over automation rate**. Unlike typical chatbots that try to answer everything, this system explicitly biases toward escalation when uncertain, ensuring zero unsafe responses.
+This project implements an AI-powered customer support triage system that **prioritizes safety over automation rate**. Unlike typical chatbots that try to answer everything, this system explicitly biases toward escalation when uncertain, to prevent unsafe automated responses by construction.
 
 ### What This System Does
 - **Automatically triages** customer support messages into safe-to-automate vs. requires-human categories
@@ -359,7 +359,7 @@ python -m pytest tests/test_pii_redaction.py::test_high_risk_recall -v
 ### System Performance Targets
 | Metric | Target | Status |
 |--------|--------|--------|
-| Zero unsafe responses | 0% | ✅ Enforced by design |
+| Unsafe responses | 0% | ✅ Enforced by design |
 | Escalation precision | >80% | ⏳ Requires eval dataset |
 | Answer correctness | >90% | ⏳ Requires eval dataset |
 | PII impact on accuracy | ≤10% | ⏳ Requires eval dataset |
@@ -380,7 +380,7 @@ python -m pytest tests/test_pii_redaction.py::test_high_risk_recall -v
 
 2. **High Escalation Rate (~30-40%)**
    - **Why**: Bias toward safety over automation
-   - **Benefit**: Zero unsafe responses guaranteed
+   - **Benefit**: Designed to prevent unsafe automated responses by construction.
    - **Justification**: Human agents are available and authorized
 
 3. **Template Rigidity vs. Natural Responses**

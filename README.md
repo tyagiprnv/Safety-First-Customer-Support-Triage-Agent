@@ -39,27 +39,28 @@ This project implements an AI-powered customer support triage system that **prio
 
 ## Architecture Overview
 
-```
-User Message → PII Redaction → Intent Classification → Risk Scoring → Decision Router
-                     ↓                   ↓                   ↓               ↓
-              [DETERMINISTIC]        [DeepSeek/GPT]     [FORMULA]    [EXPLICIT LOGIC]
-                     ↓                                                       ↓
-                                                                    ┌────────┴────────┐
-                                                        ┌───────────┤  Action Type    ├───────────┐
-                                                        ↓           └─────────────────┘           ↓
-                                                   TEMPLATE                                  GENERATED
-                                                   (~120ms)                                  (~1.5s)
-                                                   $0 cost                                   ~$0.0002 cost
-                                                        ↓                                         ↓
-                                                  Pre-vetted                            RAG + LLM
-                                                  Response                              + Validation
-                                                        └─────────────────┬───────────────────────┘
-                                                                          ↓
-                                                                      ESCALATE
-                                                                    Create Ticket
-                                                                        ↓
-                                                                   Structured Logs
-                                                                   (PII-free, cost tracked)
+```mermaid
+flowchart LR
+    U["User"]
+
+    PII["PII<br/>Redaction"]
+    IC["Intent<br/>Classify"]
+    RS["Risk<br/>Score"]
+    DR["Decision<br/>Router"]
+
+    T["Template<br/>120ms · $0"]
+    G["Generated<br/>1.5s · $0.0002"]
+
+    PV["Pre-vetted"]
+    RAG["RAG + LLM"]
+
+    ESC["Escalate"]
+    LOGS["Logs"]
+
+    U --> PII --> IC --> RS --> DR
+    DR --> T --> PV --> ESC --> LOGS
+    DR --> G --> RAG --> ESC
+
 ```
 
 ---

@@ -15,7 +15,13 @@ Your classification should consider what these markers represent in context.
 1. billing_question: Questions about billing, invoices, payment methods, charges (read-only info)
 2. feature_question: How does X feature work? How do I use Y?
 3. subscription_info: Plan details, subscription status, upgrade/downgrade info
-4. policy_question: General policies, terms, security practices (non-refund)
+4. policy_question: General policies, terms, security practices, business operations, availability, hours, operating hours (non-refund)
+   Examples:
+   - "What are your business hours?"
+   - "Are you available on weekends?"
+   - "When is customer support open?"
+   - "What is your security policy?"
+   - "How do you protect my data?"
 5. account_access: Login help, password reset, 2FA setup, account locked (read-only help)
 6. technical_support: Product bugs, troubleshooting, performance issues
 

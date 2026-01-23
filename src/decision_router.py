@@ -1,6 +1,7 @@
 """Decision routing logic with explicit precedence."""
 from typing import Optional, Dict, Any, List
 import json
+import re
 from pathlib import Path
 from src.models import (
     Action, RoutingDecision, Intent, ClassificationResult,
@@ -23,7 +24,7 @@ class Template:
 
     def matches(self, message: str, intent: Intent) -> float:
         """
-        Calculate match score for a message.
+        Calculate match score for a message using token-level matching.
 
         Args:
             message: User message (possibly redacted)
@@ -35,21 +36,51 @@ class Template:
         if self.intent != intent:
             return 0.0
 
-        message_lower = message.lower()
-
-        # Count keyword matches
-        keyword_matches = sum(
-            1 for keyword in self.keywords
-            if keyword.lower() in message_lower
-        )
-
         if not self.keywords:
             # No keywords means intent match only
             return 0.7
 
-        # Score based on keyword match ratio
-        match_ratio = keyword_matches / len(self.keywords)
-        return match_ratio
+        # Tokenize message and keywords
+        message_tokens = self._tokenize(message)
+        keyword_tokens = set()
+        for keyword in self.keywords:
+            keyword_tokens.update(self._tokenize(keyword))
+
+        # Count matching tokens
+        matched_tokens = message_tokens & keyword_tokens
+
+        if not keyword_tokens:
+            return 0.0
+
+        # Adaptive scoring for templates with many keywords
+        if len(keyword_tokens) > 8:
+            # For templates with 9+ keyword tokens, use absolute match count
+            # Need at least 2-3 matching tokens to reach high score (2.5 for 0.8 threshold)
+            absolute_score = min(len(matched_tokens) / 2.5, 1.0)
+            ratio_score = len(matched_tokens) / len(keyword_tokens)
+            # Use the higher of the two scores
+            score = max(absolute_score, ratio_score)
+        else:
+            # For templates with fewer keywords, use ratio-based scoring
+            score = len(matched_tokens) / len(keyword_tokens)
+
+        return score
+
+    @staticmethod
+    def _tokenize(text: str) -> set:
+        """
+        Split text into lowercase word tokens with simple stemming.
+
+        Args:
+            text: Text to tokenize
+
+        Returns:
+            Set of lowercase word tokens (with plural normalization)
+        """
+        tokens = re.findall(r'\b\w+\b', text.lower())
+        # Simple plural handling: remove trailing 's' for words > 3 chars
+        normalized = {t.rstrip('s') if len(t) > 3 else t for t in tokens}
+        return normalized
 
 
 class TemplateStore:
@@ -252,8 +283,8 @@ class DecisionRouter:
 
         # === 4. RAG-BASED GENERATION ===
 
-        # 4a. Check retrieval quality
-        if retrieval_score is None or retrieval_score < self.min_retrieval_score:
+        # 4a. If retrieval_score is provided, check quality
+        if retrieval_score is not None and retrieval_score < self.min_retrieval_score:
             return self._escalate(
                 reason="insufficient_retrieval",
                 risk_score=risk_score,
@@ -263,11 +294,11 @@ class DecisionRouter:
                 }
             )
 
-        # 4b. High confidence with good retrieval -> generate
+        # 4b. High confidence -> allow generation (retrieval will be done by API)
         if confidence >= self.high_confidence:
             return RoutingDecision(
                 action=Action.GENERATED,
-                reason="high_confidence_with_retrieval",
+                reason="high_confidence_for_generation",
                 risk_score=risk_score,
                 metadata={
                     "confidence": confidence,

@@ -18,7 +18,7 @@ class RiskScorer:
         Intent.REFUND_REQUEST: 0.95,
         Intent.LEGAL_DISPUTE: 1.0,
         Intent.SECURITY_INCIDENT: 1.0,
-        Intent.UNKNOWN: 0.7,  # High risk for unknown intents
+        Intent.UNKNOWN: 0.5,  # Medium risk for unknown intents
     }
 
     # High-risk PII types

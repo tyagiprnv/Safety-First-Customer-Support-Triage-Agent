@@ -324,6 +324,101 @@ class TestSystemIntegration:
         assert results[0]["intent"] == results[1]["intent"]
 
 
+class TestBusinessHoursVariations:
+    """Test that business hours queries are handled correctly."""
+
+    @pytest.mark.parametrize("query", [
+        "Are you available on weekends?",
+        "What are your operating hours?",
+        "When are you open on Saturday?",
+        "Can I reach support on Sunday?",
+        "When is customer support available?"
+    ])
+    def test_business_hours_variations(self, query):
+        """Test that business hours queries match template or generate (not escalate)."""
+        # Full pipeline
+        pii_redactor = get_pii_redactor()
+        redaction = pii_redactor.redact(query)
+
+        classifier = get_intent_classifier()
+        classification = classifier.classify(redaction)
+
+        # Should classify as policy_question (not unknown)
+        assert classification.intent == Intent.POLICY_QUESTION, (
+            f"Query '{query}' should be POLICY_QUESTION, got {classification.intent}"
+        )
+
+        # Should have reasonable confidence
+        confidence = classification.adjusted_confidence or classification.confidence
+        assert confidence >= 0.6, (
+            f"Query '{query}' should have reasonable confidence, got {confidence}"
+        )
+
+        risk_scorer = get_risk_scorer()
+        risk_score = risk_scorer.calculate_risk(classification, redaction)
+
+        # Should have low risk (policy_question base_risk is 0.2)
+        assert risk_score < 0.7, (
+            f"Query '{query}' should have low risk, got {risk_score}"
+        )
+
+        router = get_decision_router()
+        decision = router.route(
+            classification=classification,
+            redaction=redaction,
+            risk_score=risk_score,
+            retrieval_score=0.85  # Assume good retrieval
+        )
+
+        # Should match template or generate (NOT escalate)
+        assert decision.action in [Action.TEMPLATE, Action.GENERATED], (
+            f"Query '{query}' should be answered (TEMPLATE or GENERATED), "
+            f"got {decision.action} with reason: {decision.reason}"
+        )
+
+
+class TestTemplateMatchingImprovements:
+    """Test various templates with improved keyword matching."""
+
+    @pytest.mark.parametrize("query,expected_intent,min_action_quality", [
+        ("When will I be charged?", Intent.BILLING_QUESTION, [Action.TEMPLATE, Action.GENERATED]),
+        ("Can I pay with Visa?", Intent.BILLING_QUESTION, [Action.TEMPLATE, Action.GENERATED]),
+        ("How do I cancel my subscription?", Intent.SUBSCRIPTION_INFO, [Action.TEMPLATE, Action.GENERATED]),
+        ("I forgot my password", Intent.ACCOUNT_ACCESS, [Action.TEMPLATE, Action.GENERATED]),
+        ("What browsers do you support?", Intent.FEATURE_QUESTION, [Action.TEMPLATE, Action.GENERATED]),
+        ("Is my data secure?", Intent.POLICY_QUESTION, [Action.TEMPLATE, Action.GENERATED]),
+    ])
+    def test_template_matching_with_variations(self, query, expected_intent, min_action_quality):
+        """Test that queries with keyword variations are handled correctly."""
+        # Full pipeline
+        pii_redactor = get_pii_redactor()
+        redaction = pii_redactor.redact(query)
+
+        classifier = get_intent_classifier()
+        classification = classifier.classify(redaction)
+
+        # Should classify correctly
+        assert classification.intent == expected_intent, (
+            f"Query '{query}' should be {expected_intent}, got {classification.intent}"
+        )
+
+        risk_scorer = get_risk_scorer()
+        risk_score = risk_scorer.calculate_risk(classification, redaction)
+
+        router = get_decision_router()
+        decision = router.route(
+            classification=classification,
+            redaction=redaction,
+            risk_score=risk_score,
+            retrieval_score=0.85  # Assume good retrieval
+        )
+
+        # Should match template or generate (acceptable actions)
+        assert decision.action in min_action_quality, (
+            f"Query '{query}' should be answered, got {decision.action} with reason: {decision.reason}"
+        )
+
+
 # Run this file standalone
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "-s"])

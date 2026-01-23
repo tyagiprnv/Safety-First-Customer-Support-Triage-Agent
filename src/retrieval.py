@@ -98,13 +98,14 @@ class RetrievalPipeline:
             Metadata filter dict or None
         """
         # Map intents to document categories
+        # Note: Categories must match what's in the knowledge base ingestion
         intent_to_category = {
             Intent.BILLING_QUESTION: "billing",
             Intent.SUBSCRIPTION_INFO: "subscription",
             Intent.ACCOUNT_ACCESS: "account",
             Intent.FEATURE_QUESTION: "features",
             Intent.TECHNICAL_SUPPORT: "technical",
-            Intent.POLICY_QUESTION: "policy",
+            Intent.POLICY_QUESTION: "general",  # general_faqs.json contains policy questions
         }
 
         category = intent_to_category.get(intent)

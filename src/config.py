@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     min_confidence_threshold: float = 0.7
     high_confidence_threshold: float = 0.85
     high_risk_threshold: float = 0.7
-    template_similarity_threshold: float = 0.9
+    template_similarity_threshold: float = 0.8
     min_retrieval_score: float = 0.75
 
     # PII Risk Weights

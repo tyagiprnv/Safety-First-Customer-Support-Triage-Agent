@@ -352,8 +352,7 @@ Process a customer support message.
 **Request:**
 ```json
 {
-  "message": "Why was my card charged twice?",
-  "session_id": "optional-session-id"
+  "message": "Why was my card charged twice?"
 }
 ```
 

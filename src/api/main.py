@@ -98,8 +98,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
 
     # Bind request context to logger
     log = logger.bind(
-        request_id=request_id,
-        session_id=request.session_id
+        request_id=request_id
     )
 
     log.info("request_received", message_length=len(request.message))

@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     # Model Configuration
     classification_model: str = "deepseek-chat"
     generation_model: str = "deepseek-chat"
-    embedding_model: str = "deepseek-chat"  # DeepSeek uses same model for embeddings
+    embedding_model: str = "text-embedding-3-small"  # Always use OpenAI for embeddings
 
     # Temperature Configuration
     classification_temperature: float = 0.0  # Deterministic for classification
@@ -82,6 +82,16 @@ class Settings(BaseSettings):
             return None  # Use OpenAI's default
         else:
             raise ValueError(f"Unknown LLM provider: {self.llm_provider}")
+
+    def get_embedding_api_key(self) -> str:
+        """Get the API key for embeddings (always uses OpenAI)."""
+        if not self.openai_api_key:
+            raise ValueError("OPENAI_API_KEY is required for embeddings")
+        return self.openai_api_key
+
+    def get_embedding_base_url(self) -> Optional[str]:
+        """Get the base URL for embeddings (always uses OpenAI)."""
+        return None  # Use OpenAI's default
 
 
 # Global settings instance

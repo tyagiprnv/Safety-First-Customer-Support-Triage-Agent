@@ -101,7 +101,6 @@ class ChatRequest(BaseModel):
     """Request to the chat endpoint."""
 
     message: str = Field(min_length=10, max_length=2000)
-    session_id: Optional[str] = None
 
 
 class ChatResponse(BaseModel):

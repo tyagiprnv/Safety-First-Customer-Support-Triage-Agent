@@ -34,10 +34,10 @@ class VectorStore:
             )
         )
 
-        # Initialize LLM client for embeddings
+        # Initialize OpenAI client for embeddings (always uses OpenAI)
         self.openai_client = openai.OpenAI(
-            api_key=settings_config.get_api_key(),
-            base_url=settings_config.get_base_url()
+            api_key=settings_config.get_embedding_api_key(),
+            base_url=settings_config.get_embedding_base_url()
         )
         self.embedding_model = settings_config.embedding_model
 

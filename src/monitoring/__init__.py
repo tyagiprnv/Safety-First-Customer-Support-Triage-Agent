@@ -1,1 +1,1 @@
-"""Monitoring and metrics modules."""
+"""Monitoring and metrics modules"""

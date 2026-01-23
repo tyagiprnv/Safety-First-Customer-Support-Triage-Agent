@@ -90,4 +90,8 @@ evaluation/eval_results/*.csv
 .claude/
 
 CLAUDE.md
-analysis.txt
+
+/k8s
+docs/scalability_architecture.md
+IMPLEMENTATION_STATUS.md
+INTERVIEW_PREP.md

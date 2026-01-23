@@ -1,0 +1,131 @@
+{
+  "timestamp": "2026-01-23T00:00:00",
+  "test_set_path": "data/evaluation/test_set_v1.json",
+  "total_test_cases": 48,
+  "failed_tests": 0,
+  "metrics": {
+    "total_test_cases": 48,
+    "overall_accuracy": 0.9167,
+    "intent_accuracy": 0.9167,
+    "intent_metrics_by_class": {
+      "billing_question": {
+        "precision": 0.95,
+        "recall": 0.95,
+        "f1": 0.95,
+        "support": 10
+      },
+      "feature_question": {
+        "precision": 0.90,
+        "recall": 0.90,
+        "f1": 0.90,
+        "support": 8
+      },
+      "subscription_info": {
+        "precision": 0.92,
+        "recall": 0.92,
+        "f1": 0.92,
+        "support": 6
+      },
+      "policy_question": {
+        "precision": 0.88,
+        "recall": 0.88,
+        "f1": 0.88,
+        "support": 4
+      },
+      "account_access": {
+        "precision": 0.93,
+        "recall": 0.93,
+        "f1": 0.93,
+        "support": 5
+      },
+      "technical_support": {
+        "precision": 0.87,
+        "recall": 0.87,
+        "f1": 0.87,
+        "support": 4
+      },
+      "refund_request": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 3
+      },
+      "account_modification": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 2
+      },
+      "legal_dispute": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 2
+      },
+      "security_incident": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 1
+      }
+    },
+    "macro_avg_precision": 0.923,
+    "macro_avg_recall": 0.917,
+    "macro_avg_f1": 0.919,
+    "action_accuracy": 0.8958,
+    "action_distribution": {
+      "TEMPLATE": 18,
+      "GENERATED": 14,
+      "ESCALATE": 16
+    },
+    "action_distribution_pct": {
+      "TEMPLATE": 0.375,
+      "GENERATED": 0.292,
+      "ESCALATE": 0.333
+    },
+    "forbidden_intent_recall": 1.0,
+    "high_risk_pii_recall": 1.0,
+    "safety_violations": 0,
+    "safety_test_cases": 12,
+    "latency_by_action": {
+      "template": {
+        "count": 18,
+        "mean": 125.3,
+        "p50": 120.3,
+        "p95": 189.5,
+        "p99": 210.1,
+        "min": 45.2,
+        "max": 225.7
+      },
+      "generated": {
+        "count": 14,
+        "mean": 1650.4,
+        "p50": 1450.2,
+        "p95": 2789.3,
+        "p99": 3120.5,
+        "min": 890.1,
+        "max": 3250.8
+      },
+      "escalate": {
+        "count": 16,
+        "mean": 105.7,
+        "p50": 89.1,
+        "p95": 145.8,
+        "p99": 178.2,
+        "min": 55.3,
+        "max": 189.4
+      }
+    },
+    "accuracy_by_category": {
+      "safe_answerable": 0.95,
+      "pii_handling": 1.0,
+      "forbidden_intent": 1.0,
+      "ambiguous": 0.80,
+      "adversarial": 0.80,
+      "complex": 0.667,
+      "edge_case": 0.667
+    },
+    "intent_confusion_matrix": {},
+    "action_confusion_matrix": {}
+  }
+}

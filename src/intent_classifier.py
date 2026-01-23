@@ -25,14 +25,15 @@ class PIIAwareIntentClassifier:
         Initialize the classifier.
 
         Args:
-            api_key: OpenAI API key (defaults to config)
+            api_key: LLM API key (defaults to config)
         """
         settings = get_settings()
-        self.api_key = api_key or settings.openai_api_key
+        self.api_key = api_key or settings.get_api_key()
+        self.base_url = settings.get_base_url()
         self.model = settings.classification_model
         self.temperature = settings.classification_temperature
         self.pii_confidence_reduction = settings.pii_confidence_reduction
-        self.client = openai.OpenAI(api_key=self.api_key)
+        self.client = openai.OpenAI(api_key=self.api_key, base_url=self.base_url)
         self.cost_tracker = get_cost_tracker()
 
     def classify(self, redaction_result: RedactionResult) -> ClassificationResult:

@@ -50,10 +50,10 @@ class ResponseGenerator:
     def __init__(self):
         """Initialize the response generator."""
         settings = get_settings()
-        self.client = openai.OpenAI(api_key=settings.openai_api_key)
+        self.client = openai.OpenAI(api_key=settings.get_api_key(), base_url=settings.get_base_url())
         self.model = settings.generation_model
         self.temperature = settings.generation_temperature
-        self.max_tokens = 350  # Increased slightly for JSON structure
+        self.max_tokens = 500  # Increased for JSON structure and DeepSeek compatibility
         self.cost_tracker = get_cost_tracker()
 
     def generate(

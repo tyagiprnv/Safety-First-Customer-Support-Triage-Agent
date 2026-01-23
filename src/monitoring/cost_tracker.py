@@ -5,9 +5,10 @@ from dataclasses import dataclass, asdict
 from collections import defaultdict
 
 
-# OpenAI API pricing (as of January 2026)
+# LLM API pricing (as of January 2026)
 # Prices in USD per 1K tokens
 PRICING = {
+    # OpenAI models
     "gpt-4o-mini": {
         "input": 0.00015,   # $0.15 per 1M tokens
         "output": 0.0006,   # $0.60 per 1M tokens
@@ -19,6 +20,11 @@ PRICING = {
     "text-embedding-3-small": {
         "input": 0.00002,   # $0.02 per 1M tokens
         "output": 0.0,      # No output tokens for embeddings
+    },
+    # DeepSeek models (significantly cheaper)
+    "deepseek-chat": {
+        "input": 0.00014,   # $0.14 per 1M tokens (cache miss)
+        "output": 0.00028,  # $0.28 per 1M tokens
     },
 }
 

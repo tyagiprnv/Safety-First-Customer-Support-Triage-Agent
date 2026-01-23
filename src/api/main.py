@@ -22,6 +22,7 @@ from src.generation import get_response_generator
 from src.output_validator import get_output_validator
 from src.escalation import get_escalation_system
 from src.vector_store import get_vector_store
+from src.monitoring.cost_tracker import get_cost_tracker
 
 # Configure logging
 configure_logging()
@@ -321,10 +322,43 @@ async def chat(request: ChatRequest) -> ChatResponse:
 
             # Generate response
             generator = get_response_generator()
-            response_text, sources = generator.generate(
+            response_text, sources, gen_metadata = generator.generate(
                 query=redaction.redacted_message,
                 retrieval_result=retrieval_result
             )
+
+            # Check if generation itself suggests escalation
+            if gen_metadata and gen_metadata.get("requires_escalation", False):
+                escalation_system = get_escalation_system()
+                ticket_id = escalation_system.create_ticket(
+                    redaction=redaction,
+                    reason="generation_suggested_escalation",
+                    metadata={
+                        "request_id": request_id,
+                        "confidence_level": gen_metadata.get("confidence_level", "unknown")
+                    }
+                )
+
+                metrics_store["total_requests"] += 1
+                metrics_store["action_counts"]["ESCALATE"] += 1
+
+                latency_ms = (time.time() - start_time) * 1000
+
+                log.info(
+                    "request_processed",
+                    action="ESCALATE",
+                    reason="generation_suggested_escalation",
+                    ticket_id=ticket_id,
+                    latency_ms=latency_ms
+                )
+
+                return ChatResponse(
+                    action=Action.ESCALATE,
+                    response=None,
+                    reason="generation_suggested_escalation",
+                    escalation_ticket_id=ticket_id,
+                    metadata={"latency_ms": latency_ms, "generation_metadata": gen_metadata}
+                )
 
             # Validate output
             validator = get_output_validator()
@@ -392,7 +426,8 @@ async def chat(request: ChatRequest) -> ChatResponse:
                     "confidence": classification.confidence,
                     "risk_score": risk_score,
                     "retrieval_score": retrieval_result.average_score,
-                    "latency_ms": latency_ms
+                    "latency_ms": latency_ms,
+                    "generation": gen_metadata
                 }
             )
 
@@ -403,9 +438,9 @@ async def chat(request: ChatRequest) -> ChatResponse:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
-@app.get("/metrics", response_model=MetricsResponse)
-async def get_metrics() -> MetricsResponse:
-    """Get system metrics."""
+@app.get("/metrics")
+async def get_metrics() -> Dict[str, Any]:
+    """Get comprehensive system metrics including costs and business metrics."""
     # Calculate average latencies
     avg_latencies = {}
     for action_type, latencies in metrics_store["latencies"].items():
@@ -419,13 +454,56 @@ async def get_metrics() -> MetricsResponse:
     escalations = metrics_store["action_counts"]["ESCALATE"]
     escalation_rate = escalations / total if total > 0 else 0.0
 
-    return MetricsResponse(
-        total_requests=total,
-        action_distribution=metrics_store["action_counts"],
-        avg_latency_ms=avg_latencies,
-        escalation_rate=escalation_rate,
-        safety=metrics_store["safety_metrics"]
-    )
+    # Get cost tracking data
+    cost_tracker = get_cost_tracker()
+    cost_summary = cost_tracker.get_summary()
+
+    # Calculate business metrics
+    template_count = metrics_store["action_counts"]["TEMPLATE"]
+    generated_count = metrics_store["action_counts"]["GENERATED"]
+    successful_responses = template_count + generated_count
+
+    # Support deflection rate (% of requests answered without human)
+    support_deflection_rate = successful_responses / total if total > 0 else 0.0
+
+    # Template usage rate
+    template_usage_rate = template_count / total if total > 0 else 0.0
+
+    # Average cost per request
+    avg_cost_per_request = cost_tracker.get_cost_per_request(total)
+
+    # Template cost savings (templates cost $0, generation costs money)
+    avg_generation_cost = cost_summary.get("by_action", {}).get("GENERATED", {}).get("cost_usd", 0.0)
+    avg_generation_cost_per_request = avg_generation_cost / generated_count if generated_count > 0 else 0.015
+
+    template_cost_savings = template_count * avg_generation_cost_per_request
+
+    # Projected monthly cost (assuming current request rate)
+    projected_monthly_cost = cost_summary["total_cost_usd"] * 30 if total > 0 else 0.0
+
+    return {
+        # Standard metrics
+        "total_requests": total,
+        "action_distribution": metrics_store["action_counts"],
+        "avg_latency_ms": avg_latencies,
+        "escalation_rate": escalation_rate,
+        "safety": metrics_store["safety_metrics"],
+
+        # Cost metrics
+        "cost_tracking": cost_summary,
+
+        # Business metrics
+        "business_metrics": {
+            "support_deflection_rate": round(support_deflection_rate, 4),
+            "template_usage_rate": round(template_usage_rate, 4),
+            "average_cost_per_request": round(avg_cost_per_request, 6),
+            "total_cost_usd": cost_summary["total_cost_usd"],
+            "template_cost_savings": round(template_cost_savings, 6),
+            "projected_monthly_cost": round(projected_monthly_cost, 2),
+            "successful_responses": successful_responses,
+            "automated_resolution_rate": round(support_deflection_rate, 4)
+        }
+    }
 
 
 @app.get("/health", response_model=HealthResponse)

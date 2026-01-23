@@ -5,6 +5,7 @@ from typing import Optional
 from src.models import Intent, ClassificationResult, RedactionResult
 from src.prompts.classification_prompt import get_classification_prompt, create_pii_summary
 from src.config import get_settings
+from src.monitoring.cost_tracker import get_cost_tracker
 
 
 # Forbidden intents that should always escalate
@@ -29,8 +30,10 @@ class PIIAwareIntentClassifier:
         settings = get_settings()
         self.api_key = api_key or settings.openai_api_key
         self.model = settings.classification_model
+        self.temperature = settings.classification_temperature
         self.pii_confidence_reduction = settings.pii_confidence_reduction
         self.client = openai.OpenAI(api_key=self.api_key)
+        self.cost_tracker = get_cost_tracker()
 
     def classify(self, redaction_result: RedactionResult) -> ClassificationResult:
         """
@@ -59,13 +62,23 @@ class PIIAwareIntentClassifier:
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
-                temperature=0.0,  # Deterministic for classification
+                temperature=self.temperature,
                 response_format={"type": "json_object"}
             )
 
             # Parse response
             result_text = response.choices[0].message.content
             result_data = json.loads(result_text)
+
+            # Track token usage and cost
+            input_text = system_prompt + user_prompt
+            output_text = result_text
+            token_usage = self.cost_tracker.track_completion(
+                model=self.model,
+                input_text=input_text,
+                output_text=output_text,
+                action="classification"
+            )
 
             # Extract classification
             intent_str = result_data.get("intent", "unknown")

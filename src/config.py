@@ -15,6 +15,10 @@ class Settings(BaseSettings):
     generation_model: str = "gpt-4o"
     embedding_model: str = "text-embedding-3-small"
 
+    # Temperature Configuration
+    classification_temperature: float = 0.0  # Deterministic for classification
+    generation_temperature: float = 0.3  # Low temperature for consistent, grounded responses
+
     # Application Configuration
     log_level: str = "INFO"
     environment: str = "development"

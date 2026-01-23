@@ -159,19 +159,27 @@
       "confidence_required": 0.8,
       "keywords": ["browsers", "browser support", "compatibility"],
       "template": "We support the latest versions of Chrome, Firefox, Safari, and Edge. We recommend Chrome or Firefox for the best experience. Internet Explorer is not supported. For mobile, we support Safari on iOS 14+ and Chrome on Android 10+. Some features may have limited functionality on older browser versions."
+    },
+    {
+      "id": "template_021",
+      "intent": "policy_question",
+      "risk": "low",
+      "confidence_required": 0.8,
+      "keywords": ["business hours", "hours"],
+      "template": "Our support team is available 24/7 via email and chat. Phone support is available Monday-Friday, 9:00 AM - 6:00 PM EST. Enterprise customers have access to 24/7 priority phone support. For urgent issues outside business hours, use our emergency escalation line (Enterprise only) or submit a high-priority ticket through your dashboard."
     }
   ],
   "metadata": {
-    "total_templates": 20,
+    "total_templates": 21,
     "intent_coverage": {
       "billing_question": 5,
       "subscription_info": 4,
       "account_access": 3,
       "feature_question": 3,
-      "policy_question": 1,
+      "policy_question": 2,
       "technical_support": 4
     },
-    "version": "1.0",
-    "last_updated": "2024-01-15"
+    "version": "1.1",
+    "last_updated": "2026-01-23"
   }
 }

@@ -101,6 +101,7 @@ def ingest_json_faqs():
         ("billing_faqs.json", "billing"),
         ("feature_faqs.json", "features"),
         ("technical_faqs.json", "technical"),
+        ("general_faqs.json", "general"),
     ]
 
     doc_id = 0

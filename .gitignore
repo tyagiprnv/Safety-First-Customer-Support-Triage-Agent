@@ -90,3 +90,4 @@ evaluation/eval_results/*.csv
 .claude/
 
 CLAUDE.md
+analysis.txt

@@ -23,10 +23,14 @@ from src.output_validator import get_output_validator
 from src.escalation import get_escalation_system
 from src.vector_store import get_vector_store
 from src.monitoring.cost_tracker import get_cost_tracker
+from src.agent.graph import create_triage_graph
 
 # Configure logging
 configure_logging()
 logger = get_logger(__name__)
+
+# Global graph instance (initialized on startup)
+triage_graph = None
 
 # Create FastAPI app
 app = FastAPI(
@@ -59,6 +63,8 @@ metrics_store: Dict[str, Any] = {
 @app.on_event("startup")
 async def startup_event():
     """Initialize components on startup."""
+    global triage_graph
+
     logger.info("application_starting")
 
     # Initialize all components
@@ -78,6 +84,13 @@ async def startup_event():
         logger.info("vector_store_initialized", document_count=doc_count)
     except Exception as e:
         logger.error("vector_store_initialization_failed", error=str(e))
+
+    # Initialize LangGraph agent
+    try:
+        triage_graph = create_triage_graph()
+        logger.info("triage_graph_initialized")
+    except Exception as e:
+        logger.error("triage_graph_initialization_failed", error=str(e))
 
     logger.info("application_started")
 
@@ -434,6 +447,133 @@ async def chat(request: ChatRequest) -> ChatResponse:
         raise
     except Exception as e:
         log.error("request_processing_failed", error=str(e), exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+@app.post("/chat/agent", response_model=ChatResponse)
+async def chat_agent(request: ChatRequest) -> ChatResponse:
+    """
+    Process a customer support message using LangGraph agent (A/B test endpoint).
+
+    This endpoint uses the new LangGraph-based agentic system while maintaining
+    all safety guarantees from the original system.
+
+    Args:
+        request: Chat request with user message
+
+    Returns:
+        Chat response with action and response or escalation
+    """
+    start_time = time.time()
+    request_id = str(uuid.uuid4())
+
+    # Bind request context to logger
+    log = logger.bind(
+        request_id=request_id,
+        endpoint="chat_agent"
+    )
+
+    log.info("agent_request_received", message_length=len(request.message))
+
+    try:
+        # Input validation
+        if len(request.message) < 10:
+            raise HTTPException(status_code=400, detail="Message too short (minimum 10 characters)")
+
+        if len(request.message) > 2000:
+            raise HTTPException(status_code=400, detail="Message too long (maximum 2000 characters)")
+
+        # Check if graph is initialized
+        if triage_graph is None:
+            raise HTTPException(status_code=503, detail="Agent graph not initialized")
+
+        # Initialize state
+        initial_state = {
+            "messages": [request.message],
+            "request_id": request_id,
+            "original_message": request.message,
+            "safety_violations": [],
+            "tool_calls": [],
+            "start_time": start_time
+        }
+
+        # Execute graph
+        log.info("executing_graph")
+        final_state = await triage_graph.ainvoke(initial_state)
+
+        # Calculate latency
+        latency_ms = (time.time() - start_time) * 1000
+
+        # Extract results from final state
+        action = final_state.get("action", Action.ESCALATE)
+        response_text = final_state.get("response")
+        reason = final_state.get("reason", "unknown")
+        escalation_ticket_id = final_state.get("escalation_ticket_id")
+
+        # Build metadata
+        metadata = {
+            "latency_ms": latency_ms,
+            "tool_calls": final_state.get("tool_calls", [])
+        }
+
+        classification = final_state.get("classification")
+        if classification:
+            metadata["intent"] = classification.intent.value
+            metadata["confidence"] = classification.confidence
+
+        risk_score = final_state.get("risk_score")
+        if risk_score is not None:
+            metadata["risk_score"] = risk_score
+
+        if action == Action.TEMPLATE:
+            metadata["template_id"] = final_state.get("template_id")
+            metadata["template_match_score"] = final_state.get("template_match_score")
+
+        if action == Action.GENERATED:
+            retrieval_score = final_state.get("retrieval_score")
+            if retrieval_score is not None:
+                metadata["retrieval_score"] = retrieval_score
+
+            gen_metadata = final_state.get("generation_metadata")
+            if gen_metadata:
+                metadata["generation"] = gen_metadata
+
+        # Update metrics
+        metrics_store["total_requests"] += 1
+        metrics_store["action_counts"][action.value] += 1
+
+        action_type_key = action.value.lower()
+        if action_type_key in metrics_store["latencies"]:
+            metrics_store["latencies"][action_type_key].append(latency_ms)
+
+        # Update safety metrics
+        if action == Action.ESCALATE:
+            redaction = final_state.get("redaction")
+            if redaction and redaction.has_high_risk_pii:
+                metrics_store["safety_metrics"]["high_risk_pii_escalations"] += 1
+
+            if classification and classification.is_forbidden:
+                metrics_store["safety_metrics"]["forbidden_intent_escalations"] += 1
+
+        log.info(
+            "agent_request_processed",
+            action=action.value,
+            reason=reason,
+            latency_ms=latency_ms
+        )
+
+        return ChatResponse(
+            action=action,
+            response=response_text,
+            reason=reason,
+            escalation_ticket_id=escalation_ticket_id,
+            metadata=metadata
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        log.error("agent_request_processing_failed", error=str(e), exc_info=True)
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 

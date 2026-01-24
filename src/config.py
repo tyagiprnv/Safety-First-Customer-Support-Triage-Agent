@@ -1,6 +1,7 @@
 """Configuration management for the triage agent."""
 import os
 from typing import Optional
+from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 
 
@@ -32,6 +33,9 @@ class Settings(BaseSettings):
     template_similarity_threshold: float = 0.8
     min_retrieval_score: float = 0.75
 
+    # Clarification (for future use in Phase 1 clarification feature)
+    clarification_confidence_threshold: float = 0.75
+
     # PII Risk Weights
     high_risk_pii_weight: float = 0.3
     medium_risk_pii_weight: float = 0.15
@@ -57,9 +61,11 @@ class Settings(BaseSettings):
     min_input_length: int = 10
     max_output_length: int = 1000
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = False
+    model_config = ConfigDict(
+        env_file=".env",
+        case_sensitive=False,
+        extra="ignore"  # Ignore extra fields in .env
+    )
 
     def get_api_key(self) -> str:
         """Get the API key for the configured LLM provider."""
